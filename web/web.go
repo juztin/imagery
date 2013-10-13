@@ -2,14 +2,12 @@ package web
 
 import (
 	"crypto/rand"
-	"fmt"
 	"image"
 	"io"
 	//"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"bitbucket.org/juztin/imagery"
 )
@@ -25,19 +23,19 @@ func RandName(l int) string {
 	return string(name)
 }
 
-func SaveFile(req *http.Request, resp http.ResponseWriter, filePath, filename string) (string, *os.File, error) {
+func SaveFile(req *http.Request, resp http.ResponseWriter, path, filename string) (*os.File, error) {
 	// create the project path
-	if err := os.MkdirAll(filePath, 0755); err != nil {
-		return "", nil, err
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return nil, err
 	}
 
 	// replace spaces in image name
-	filename = strings.Replace(filename, " ", "-", -1)
+	//filename = strings.Replace(filename, " ", "-", -1)
 
 	// open image file for writing
-	t, err := os.OpenFile(filepath.Join(filePath, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	t, err := os.OpenFile(filepath.Join(path, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		return filename, nil, err
+		return nil, err
 	}
 	defer t.Close()
 
@@ -45,45 +43,76 @@ func SaveFile(req *http.Request, resp http.ResponseWriter, filePath, filename st
 	r := http.MaxBytesReader(resp, req.Body, 2<<20)
 	defer req.Body.Close()
 	if _, err := io.Copy(t, r); err != nil {
-		return filename, nil, err
+		return nil, err
 	}
 
 	// return the filename
-	return filename, t, nil
+	return t, nil
 }
 
-func SaveFormFile(r *http.Request, filePath string) (string, *os.File, error) {
+// TODO set a defined max request size (currently set to 10MB in net/http/request.go)
+func SaveFormFile(req *http.Request, resp http.ResponseWriter, path string) (*os.File, error) {
 	// grab the file from the request
-	f, h, err := r.FormFile("image")
+	f, h, err := req.FormFile("image")
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 	defer f.Close()
 
 	// create the project path
-	if err := os.MkdirAll(filePath, 0755); err != nil {
-		return "", nil, err
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return nil, err
 	}
 
 	// replace spaces in image name
-	filename := strings.Replace(h.Filename, " ", "-", -1)
+	//filename := strings.Replace(h.Filename, " ", "-", -1)
 
 	// save the file
-	t, err := os.OpenFile(filepath.Join(filePath, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	t, err := os.OpenFile(filepath.Join(path, h.Filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	//t, err := ioutil.TempFile(filePath, "."+filename)
 	if err != nil {
-		return filename, nil, err
+		return nil, err
 	}
 	defer t.Close()
 	// copy the image to the file
 	if _, err := io.Copy(t, f); err != nil {
-		return filename, nil, err
+		return nil, err
 	}
 
-	return filename, t, nil
+	return t, nil
 }
 
-func ConvertToJpg(imgName string, f *os.File, isThumb bool) (p string, i image.Image, err error) {
+func SaveImage(req *http.Request, resp http.ResponseWriter, path, name string) (image.Image, error) {
+	//f, err := SaveFile(req, resp, path, name)
+	_, err := SaveFile(req, resp, path, name)
+	if err != nil {
+		return nil, err
+	}
+	return imagery.Decode(filepath.Join(path, name))
+}
+
+func SaveFormImage(req *http.Request, resp http.ResponseWriter, path, name string) (image.Image, error) {
+	_, err := SaveFormFile(req, resp, path)
+	if err != nil {
+		return nil, err
+	}
+	return imagery.Decode(filepath.Join(path, name))
+}
+
+func ImageType(req *http.Request) imagery.ImgType {
+	switch req.Header.Get("Content-Type") {
+	default:
+		return imagery.IMG_UNKNOWN
+	case "image/gif":
+		return imagery.IMG_GIF
+	case "image/jpeg":
+		return imagery.IMG_JPEG
+	case "image/png":
+		return imagery.IMG_PNG
+	}
+}
+
+/*func ConvertToJpg(imgName string, f *os.File, isThumb bool) (p string, i image.Image, err error) {
 	x := filepath.Ext(imgName)
 	//n = imgName[:len(imgName)-len(x)]+".jpg"
 	s := ""
@@ -106,4 +135,4 @@ func ConvertToJpg(imgName string, f *os.File, isThumb bool) (p string, i image.I
 	}
 
 	return
-}
+}*/

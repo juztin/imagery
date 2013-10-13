@@ -3,10 +3,11 @@ package imagery
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"image"
-	_ "image/gif"
+	"image/gif"
 	"image/jpeg"
-	_ "image/png"
+	"image/png"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,14 +24,27 @@ import (
     return filepath.Join(d, n)
 }*/
 
-func Decode(fpath string) (image.Image, string, error) {
-	f, err := os.Open(fpath)
+type ImgType int
+
+const (
+	IMG_UNKNOWN ImgType = iota
+	IMG_PNG
+	IMG_JPEG
+	IMG_GIF
+)
+
+//func Decode(fpath string) (image.Image, string, error) {
+func Decode(path string) (image.Image, error) {
+	f, err := os.Open(path)
 	if err != nil {
-		return nil, "", err
+		//return nil, "", err
+		return nil, err
 	}
 	defer f.Close()
 
-	return image.Decode(bufio.NewReader(f))
+	//return image.Decode(bufio.NewReader(f))
+	i, _, err := image.Decode(bufio.NewReader(f))
+	return i, err
 }
 
 func ResizeWidth(img image.Image, width int) (image.Image, error) {
@@ -44,39 +58,63 @@ func ResizeWidth(img image.Image, width int) (image.Image, error) {
 	return r, nil
 }
 
-func WriteToJpg(img image.Image, dstPath, name string) error {
+func WriteTo(t ImgType, m image.Image, path, filename string) error {
 	var buf bytes.Buffer
-	jpeg.Encode(&buf, img, &jpeg.Options{Quality: 75})
-	return ioutil.WriteFile(filepath.Join(dstPath, name), buf.Bytes(), 0644)
+	switch t {
+	default:
+		return errors.New("Invalid image type")
+	case IMG_PNG:
+		png.Encode(&buf, m)
+	case IMG_JPEG:
+		//jpeg.Encode(&buf, m, &jpeg.Options{Quality: 75})
+		jpeg.Encode(&buf, m, nil)
+	case IMG_GIF:
+		gif.Encode(&buf, m, nil)
+	}
+	return ioutil.WriteFile(filepath.Join(path, filename), buf.Bytes(), 0644)
 }
 
-func ConvertToJPG(fpath, name string, deleteOrig bool) (image.Image, error) {
-	img, _, err := Decode(fpath)
+func WriteToPng(img image.Image, path, filename string) error {
+	return WriteTo(IMG_PNG, img, path, filename)
+}
+
+func WriteToJpg(img image.Image, path, filename string) error {
+	return WriteTo(IMG_JPEG, img, path, filename)
+}
+
+func WriteToGif(img image.Image, path, filename string) error {
+	return WriteTo(IMG_GIF, img, path, filename)
+}
+
+func ConvertToJPG(path, filename string, deleteOrig bool) (image.Image, error) {
+	//img, _, err := Decode(fpath)
+	img, err := Decode(path)
 	if err != nil {
 		return img, err
-	} else if WriteToJpg(img, filepath.Dir(fpath), name); err != nil {
+	} else if WriteToJpg(img, filepath.Dir(path), filename); err != nil {
 		return img, err
 	}
 
 	if deleteOrig {
-		os.Remove(fpath)
+		os.Remove(path)
 	}
 
 	return img, nil
 }
 
-func ResizeWidthToJPG(fpath, name string, deleteOrig bool, width int) (image.Image, error) {
-	img, _, err := Decode(fpath)
+func ResizeWidthToJPG(path, filename string, deleteOrig bool, width int) (image.Image, error) {
+	//img, _, err := Decode(path)
+	img, err := Decode(path)
 	if err != nil {
 		return img, err
 	} else if img, err = ResizeWidth(img, width); err != nil {
 		return img, err
-	} else if err = WriteToJpg(img, filepath.Dir(fpath), name); err != nil {
+	} else if err = WriteToJpg(img, filepath.Dir(path), filename); err != nil {
 		return img, err
 	}
 
 	if deleteOrig {
-		os.Remove(fpath)
+		os.Remove(path)
 	}
 
 	//return img.Bounds().Size(), nil
