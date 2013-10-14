@@ -15,15 +15,6 @@ import (
 	"code.google.com/p/graphics-go/graphics"
 )
 
-/*func jpegName(img string) string {
-    d := filepath.Dir(img)
-    f := filepath.Base(img)
-    x := filepath.Ext(img)
-    n := f[:len(x)+1]+".jpg"
-
-    return filepath.Join(d, n)
-}*/
-
 type ImgType int
 
 const (
@@ -33,7 +24,6 @@ const (
 	IMG_GIF
 )
 
-//func Decode(fpath string) (image.Image, string, error) {
 func Decode(path string) (image.Image, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -42,7 +32,6 @@ func Decode(path string) (image.Image, error) {
 	}
 	defer f.Close()
 
-	//return image.Decode(bufio.NewReader(f))
 	i, _, err := image.Decode(bufio.NewReader(f))
 	return i, err
 }
@@ -103,7 +92,6 @@ func ConvertToJPG(path, filename string, deleteOrig bool) (image.Image, error) {
 }
 
 func ResizeWidthToJPG(path, filename string, deleteOrig bool, width int) (image.Image, error) {
-	//img, _, err := Decode(path)
 	img, err := Decode(path)
 	if err != nil {
 		return img, err
@@ -117,6 +105,5 @@ func ResizeWidthToJPG(path, filename string, deleteOrig bool, width int) (image.
 		os.Remove(path)
 	}
 
-	//return img.Bounds().Size(), nil
 	return img, nil
 }

@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"image"
 	"io"
-	//"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -28,9 +27,6 @@ func SaveFile(req *http.Request, resp http.ResponseWriter, path, filename string
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return nil, err
 	}
-
-	// replace spaces in image name
-	//filename = strings.Replace(filename, " ", "-", -1)
 
 	// open image file for writing
 	t, err := os.OpenFile(filepath.Join(path, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -64,12 +60,8 @@ func SaveFormFile(req *http.Request, resp http.ResponseWriter, path string) (*os
 		return nil, err
 	}
 
-	// replace spaces in image name
-	//filename := strings.Replace(h.Filename, " ", "-", -1)
-
 	// save the file
 	t, err := os.OpenFile(filepath.Join(path, h.Filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	//t, err := ioutil.TempFile(filePath, "."+filename)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +75,6 @@ func SaveFormFile(req *http.Request, resp http.ResponseWriter, path string) (*os
 }
 
 func SaveImage(req *http.Request, resp http.ResponseWriter, path, name string) (image.Image, error) {
-	//f, err := SaveFile(req, resp, path, name)
 	_, err := SaveFile(req, resp, path, name)
 	if err != nil {
 		return nil, err
@@ -111,28 +102,3 @@ func ImageType(req *http.Request) imagery.ImgType {
 		return imagery.IMG_PNG
 	}
 }
-
-/*func ConvertToJpg(imgName string, f *os.File, isThumb bool) (p string, i image.Image, err error) {
-	x := filepath.Ext(imgName)
-	//n = imgName[:len(imgName)-len(x)]+".jpg"
-	s := ""
-	n := imgName[:len(imgName)-len(x)]
-	if isThumb {
-		s = ".thumb"
-	}
-	p = fmt.Sprintf("%s%s.jpg", n, s)
-
-	if isThumb {
-		i, err = imagery.ResizeWidthToJPG(f.Name(), p, true, 200)
-	} else {
-		i, err = imagery.ConvertToJPG(f.Name(), p, true)
-	}
-
-	// delete the temporary image file on error
-	if err != nil {
-		os.Remove(f.Name())
-		f = nil
-	}
-
-	return
-}*/
