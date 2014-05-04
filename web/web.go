@@ -12,7 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"bitbucket.org/juztin/imagery"
+	"minty.io/imagery"
 )
 
 const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
