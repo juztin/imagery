@@ -12,7 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"minty.io/imagery"
+	"code.minty.io/imagery"
 )
 
 const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
